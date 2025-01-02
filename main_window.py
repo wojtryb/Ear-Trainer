@@ -22,14 +22,20 @@ class MainWindow(QWidget):
         super().__init__(parent)
 
         self._request_new_tune_cb = request_new_tune_cb
-
         self._navigator = self._request_new_tune_cb()
 
         self._image_widget = HideableImageWidget()
-        self._repeat_button = self._init_repeat_button()
-        self._continue_button = self._init_continue_button()
-        self._select_next_button = self._init_select_next_button()
-        self._select_previous_button = self._init_select_previous_button()
+
+        self._select_previous_button = self._init_button(
+            self.perform_select_previous, "<")
+        self._repeat_selection_button = self._init_button(
+            self.perform_repeat_selection, "O")
+        self._select_next_button = self._init_button(
+            self.perform_select_next, ">")
+        self._repeat_melody_button = self._init_button(
+            self.perform_repeat_melody, "Repeat melody")
+        self._continue_button = self._init_button(
+            self.perform_continue, "Start")
 
         self.setLayout(self._init_layout())
         self.resize(1200, 500)
@@ -38,62 +44,48 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self._image_widget)
 
-        navigator = QGridLayout()
-        navigator.addWidget(self._select_previous_button, 0, 0, 0, 1)
-        navigator.addWidget(self._select_next_button, 0, 1, 0, 1)
-        layout.addLayout(navigator)
-
         footer = QGridLayout()
-        footer.addWidget(self._repeat_button, 0, 0, 1, 1)
-        footer.addWidget(self._continue_button, 0, 1, 1, 2)
+        footer.addWidget(self._select_previous_button, 0, 0, 0, 1)
+        footer.addWidget(self._repeat_selection_button, 0, 1, 0, 1)
+        footer.addWidget(self._select_next_button, 0, 2, 0, 1)
+        footer.addWidget(self._repeat_melody_button, 0, 3, 0, 3)
+        footer.addWidget(self._continue_button, 0, 6, 0, 5)
         layout.addLayout(footer)
+
         return layout
 
-    def _init_repeat_button(self) -> QPushButton:
-        def on_click():
+    def perform_repeat_melody(self):
+        self._navigator.play_whole()
+
+    def perform_continue(self):
+        if not self._image_widget.is_revealed:
+            self._image_widget.is_revealed = True
+            self._continue_button.setText("Continue")
+            self._continue_button.setStyleSheet(
+                "background-color: darkgreen")
+        else:
+            self._image_widget.is_revealed = False
+            self._continue_button.setText("Reveal")
+            self._continue_button.setStyleSheet("")
+            self.repaint()
+            self._navigator = self._request_new_tune_cb()
             self._navigator.play_whole()
+            self._image_widget.load_from_navigator(self._navigator)
 
-        button = QPushButton(text="Repeat tune")
-        button.clicked.connect(on_click)
-        button.setFixedHeight(button.sizeHint().height()*2)
-        return button
+    def perform_select_next(self):
+        self._navigator.select_next_note()
+        self._navigator.play_selection()
 
-    def _init_continue_button(self) -> QPushButton:
-        def on_click() -> None:
-            if not self._image_widget.is_revealed:
-                self._image_widget.is_revealed = True
-                self._continue_button.setText("Continue")
-                self._continue_button.setStyleSheet(
-                    "background-color: darkgreen")
-            else:
-                self._image_widget.is_revealed = False
-                self._continue_button.setText("Reveal")
-                self._continue_button.setStyleSheet("")
-                self.repaint()
-                self._navigator = self._request_new_tune_cb()
-                self._navigator.play_whole()
-                self._image_widget.load_from_navigator(self._navigator)
+    def perform_select_previous(self):
+        self._navigator.select_previous_note()
+        self._navigator.play_selection()
 
-        button = QPushButton(text="Start")
-        button.clicked.connect(on_click)
-        button.setFixedHeight(button.sizeHint().height()*2)
-        return button
+    def perform_repeat_selection(self):
+        self._navigator.play_selection()
 
-    def _init_select_next_button(self) -> QPushButton:
-        def on_click():
-            self._navigator.select_next_note()
-            self._navigator.play_selection()
-        button = QPushButton(text=">")
-        button.clicked.connect(on_click)
-        button.setFixedHeight(button.sizeHint().height()*2)
-        return button
-
-    def _init_select_previous_button(self) -> QPushButton:
-        def on_click():
-            self._navigator.select_previous_note()
-            self._navigator.play_selection()
-        button = QPushButton(text="<")
-        button.clicked.connect(on_click)
+    def _init_button(self, on_click_callback: Callable[[], None], text: str):
+        button = QPushButton(text=text)
+        button.clicked.connect(on_click_callback)
         button.setFixedHeight(button.sizeHint().height()*2)
         return button
 
