@@ -24,9 +24,8 @@ class MainWindow(QWidget):
         self._request_new_tune_cb = request_new_tune_cb
 
         self._navigator = self._request_new_tune_cb()
-        self._is_revealed_state = True
 
-        self._image_widget = self._init_image_widget()
+        self._image_widget = HideableImageWidget()
         self._repeat_button = self._init_repeat_button()
         self._continue_button = self._init_continue_button()
         self._select_next_button = self._init_select_next_button()
@@ -50,65 +49,81 @@ class MainWindow(QWidget):
         layout.addLayout(footer)
         return layout
 
-    def _init_image_widget(self) -> QLabel:
-        image_widget = QLabel(self)
-        image_widget.setStyleSheet("QLabel { background-color : white }")
-        image_widget.setAlignment(Qt.AlignCenter)  # type: ignore
-        return image_widget
-
     def _init_repeat_button(self) -> QPushButton:
-        def do_stuff():
+        def on_click():
             self._navigator.play_whole()
 
         button = QPushButton(text="Repeat tune")
-        button.clicked.connect(do_stuff)
+        button.clicked.connect(on_click)
         button.setFixedHeight(button.sizeHint().height()*2)
         return button
 
     def _init_continue_button(self) -> QPushButton:
-        def do_stuff() -> None:
-            if not self._is_revealed_state:
-                self._update_image()
+        def on_click() -> None:
+            if not self._image_widget.is_revealed:
+                self._image_widget.is_revealed = True
                 self._continue_button.setText("Continue")
                 self._continue_button.setStyleSheet(
                     "background-color: darkgreen")
-                self._is_revealed_state = True
             else:
-                self._reset_image()
+                self._image_widget.is_revealed = False
                 self._continue_button.setText("Reveal")
                 self._continue_button.setStyleSheet("")
                 self.repaint()
                 self._navigator = self._request_new_tune_cb()
                 self._navigator.play_whole()
-                self._is_revealed_state = False
+                self._image_widget.load_from_navigator(self._navigator)
 
         button = QPushButton(text="Start")
-        button.clicked.connect(do_stuff)
+        button.clicked.connect(on_click)
         button.setFixedHeight(button.sizeHint().height()*2)
         return button
 
     def _init_select_next_button(self) -> QPushButton:
-        def do_stuff():
+        def on_click():
             self._navigator.select_next_note()
             self._navigator.play_selection()
         button = QPushButton(text=">")
-        button.clicked.connect(do_stuff)
+        button.clicked.connect(on_click)
         button.setFixedHeight(button.sizeHint().height()*2)
         return button
 
     def _init_select_previous_button(self) -> QPushButton:
-        def do_stuff():
+        def on_click():
             self._navigator.select_previous_note()
             self._navigator.play_selection()
         button = QPushButton(text="<")
-        button.clicked.connect(do_stuff)
+        button.clicked.connect(on_click)
         button.setFixedHeight(button.sizeHint().height()*2)
         return button
 
-    def _reset_image(self) -> None:
-        self._image_widget.setPixmap(QPixmap())
 
-    def _update_image(self) -> None:
-        path = self._navigator.request_image()
-        pixmap = QPixmap(path)
-        self._image_widget.setPixmap(pixmap)
+class HideableImageWidget(QLabel):
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setStyleSheet("QLabel { background-color : white }")
+        self.setAlignment(Qt.AlignCenter)  # type: ignore
+
+        self._current_image = QPixmap()
+        self._is_revealed = True
+
+    @property
+    def is_revealed(self) -> bool:
+        return self._is_revealed
+
+    @is_revealed.setter
+    def is_revealed(self, value: bool):
+        if value:
+            self.setPixmap(self._current_image)
+        else:
+            self.setPixmap(QPixmap())
+
+        self._is_revealed = value
+
+    def load_from_navigator(self, navigator: MelodyNavigator):
+        path = navigator.request_image()
+        self._current_image = QPixmap(path)
+
+        if self.is_revealed:
+            self.setPixmap(self._current_image)
