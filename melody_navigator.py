@@ -19,7 +19,7 @@ class MelodyNavigator:
     def request_image(self):
         return str(self._melody.write("musicxml.png"))
 
-    def play_whole(self, tempo: int = 120):
+    def play_whole(self, tempo: int = 90):
         score_with_tempo = Score(MetronomeMark(tempo))
         score_with_tempo.append(self._melody)
 
@@ -27,13 +27,14 @@ class MelodyNavigator:
         thread.daemon = True
         thread.start()
 
-    # TODO: tempo here is bad
-    def play_selection(self):
+    def play_selection(self, tempo: int = 90):
         if self._selection is None:
             return
 
         note = get_notes(self._melody)[self._selection]
-        thread = Thread(target=note.show, args=['midi'])
+        score_with_tempo = Score(MetronomeMark(tempo))
+        score_with_tempo.append(note)
+        thread = Thread(target=score_with_tempo.show, args=['midi'])
         thread.daemon = True
         thread.start()
 
