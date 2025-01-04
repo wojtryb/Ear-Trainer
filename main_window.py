@@ -89,6 +89,18 @@ class MainWindow(QWidget):
         button.setFixedHeight(button.sizeHint().height()*2)
         return button
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_J:  # type: ignore
+            self.perform_select_previous()
+        if event.key() == Qt.Key_L:  # type: ignore
+            self.perform_select_next()
+        if event.key() == Qt.Key_K:  # type: ignore
+            self.perform_repeat_selection()
+        if event.key() == Qt.Key_I:  # type: ignore
+            self.perform_repeat_melody()
+        if event.key() == Qt.Key_U:  # type: ignore
+            self.perform_continue()
+
 
 class HideableImageWidget(QLabel):
 
