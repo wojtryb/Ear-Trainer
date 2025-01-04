@@ -2,39 +2,28 @@ import random
 
 from music21.note import Note
 from music21.stream.base import Score
-from music21.scale import MinorScale, MajorScale, ChromaticScale
-from music21.interval import Interval
+from music21.scale import ConcreteScale
 
 
-def random_step_melody() -> Score:
-    NOTES_TO_PLAY = 4
-    MAX_JUMP = 3
+def random_step_melody(
+    scale: ConcreteScale,
+    notes_to_play: int,
+    max_jump: int
+) -> Score:
+    pitches = [pitch for pitch in scale.getPitches()]
 
-    note_ids_to_play = [random.choice((0, 7))]
-    for _ in range(NOTES_TO_PLAY-1):
+    first_note_id = random.choice((0, len(pitches)-1))
+    note_ids_to_play = [first_note_id]
+    for _ in range(notes_to_play-1):
         last_note = note_ids_to_play[-1]
-        min_note_id = max(0, last_note-MAX_JUMP)
-        max_note_id = min(7, last_note+MAX_JUMP)
-        ids = [id for id in range(min_note_id, max_note_id+1)
-               if not id == last_note]
-        note_ids_to_play.append(random.choice(ids))
-
-    scale_type = random.choice((MajorScale, MinorScale))
-    tonic = random.choice(ChromaticScale().getPitches("C2", "C5"))
-    key = scale_type(tonic)
-    # key = random.choice(("C2", "C3", "C4"))
-    pitches = [pitch for pitch in key.getPitches()]
+        min_note_id = max(0, last_note-max_jump)
+        max_note_id = min(len(pitches)-1, last_note+max_jump)
+        possibilities = [id for id in range(min_note_id, max_note_id+1)
+                         if not id == last_note]
+        note_ids_to_play.append(random.choice(possibilities))
 
     output_melody = Score()
     for id in note_ids_to_play:
-        note = Note(pitches[id])
-        output_melody.append(note)
-
-    for note_1, note_2 in zip(output_melody, output_melody[1:]):
-        interval = Interval(pitchStart=note_1.pitch, pitchEnd=note_2.pitch)
-        note_2: Note
-        note_2.addLyric(interval.name)
-
-    output_melody[0].addLyric(key.name)
+        output_melody.append(Note(pitches[id]))
 
     return output_melody
