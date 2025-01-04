@@ -1,3 +1,3 @@
-from .example_melody_generator import generate_diatonic_melody
+from .random_step_melody import random_step_melody
 
-__all__ = ["generate_diatonic_melody"]
+__all__ = ["random_step_melody"]

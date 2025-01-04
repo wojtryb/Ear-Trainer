@@ -6,9 +6,9 @@ from music21.scale import MinorScale, MajorScale, ChromaticScale
 from music21.interval import Interval
 
 
-def generate_diatonic_melody() -> Score:
+def random_step_melody() -> Score:
     NOTES_TO_PLAY = 4
-    MAX_JUMP = 2
+    MAX_JUMP = 3
 
     note_ids_to_play = [random.choice((0, 7))]
     for _ in range(NOTES_TO_PLAY-1):
@@ -20,8 +20,10 @@ def generate_diatonic_melody() -> Score:
         note_ids_to_play.append(random.choice(ids))
 
     scale_type = random.choice((MajorScale, MinorScale))
-    key = random.choice(ChromaticScale().getPitches())
-    pitches = [pitch for pitch in scale_type(key).getPitches()]
+    tonic = random.choice(ChromaticScale().getPitches("C2", "C5"))
+    key = scale_type(tonic)
+    # key = random.choice(("C2", "C3", "C4"))
+    pitches = [pitch for pitch in key.getPitches()]
 
     output_melody = Score()
     for id in note_ids_to_play:
@@ -32,5 +34,7 @@ def generate_diatonic_melody() -> Score:
         interval = Interval(pitchStart=note_1.pitch, pitchEnd=note_2.pitch)
         note_2: Note
         note_2.addLyric(interval.name)
+
+    output_melody[0].addLyric(key.name)
 
     return output_melody
