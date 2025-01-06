@@ -1,6 +1,7 @@
 from threading import Thread
 from copy import deepcopy
 
+from music21.instrument import Instrument
 from music21.note import Note
 from music21.interval import Interval
 from music21.stream.base import Score
@@ -14,8 +15,9 @@ def get_notes(melody: Score):
 
 class MelodyNavigator:
 
-    def __init__(self, melody: Score):
+    def __init__(self, melody: Score, instrument: Instrument):
         self._melody = melody
+        self._instrument = instrument
         self._selection: int | None = None
 
     def request_image(self):
@@ -29,8 +31,9 @@ class MelodyNavigator:
         return str(melody.write("musicxml.png"))
 
     def play_whole(self, tempo: int = 90):
-        score_with_tempo = Score(MetronomeMark(tempo))
-        score_with_tempo.append(self._melody)
+        score_with_tempo = deepcopy(self._melody)
+        score_with_tempo.insert(MetronomeMark(tempo))
+        score_with_tempo.insert(self._instrument)
 
         thread = Thread(target=score_with_tempo.show, args=['midi'])
         thread.daemon = True
@@ -42,6 +45,7 @@ class MelodyNavigator:
 
         note = get_notes(self._melody)[self._selection]
         score_with_tempo = Score(MetronomeMark(tempo))
+        score_with_tempo.insert(self._instrument)
         score_with_tempo.append(note)
         thread = Thread(target=score_with_tempo.show, args=['midi'])
         thread.daemon = True
